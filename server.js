@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth , MessageMedia} = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 
@@ -26,18 +26,58 @@ client.on('ready', () => {
 
 client.initialize();
 
+// app.post('/send', async (req, res) => {
+//     const { number, message, attachment } = req.body;
+//     console.log('Número recebido:', number);  // Verifique os dados recebidos
+//     console.log('Mensagem recebida:', message);  // Verifique os dados recebidos
+//      console.log('Arquivo recebida:', attachment);  // Verifique os dados recebidos
+//     try {
+//         const formattedNumber = number.includes('@c.us') ? number : `${number}@c.us`;
+//         await client.sendMessage(formattedNumber, message, attachment);
+//         res.json({ success: true, message: 'Mensagem enviada!' });
+//     } catch (error) {
+//         console.error('Erro ao enviar a mensagem:', error);  // Log completo do erro
+//         res.status(500).json({ success: false, error: error.message });
+//     }
+// });
+
+
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+
 app.post('/send', async (req, res) => {
-    const { number, message } = req.body;
-    console.log('Número recebido:', number);  // Verifique os dados recebidos
-    console.log('Mensagem recebida:', message);  // Verifique os dados recebidos
     try {
+        const { number, message, attachment } = req.body;
+
+        console.log('Número recebido:', number);
+        console.log('Mensagem recebida:', message);
+        console.log('Arquivo recebido (Base64):', attachment ? 'Sim' : 'Não');
+
         const formattedNumber = number.includes('@c.us') ? number : `${number}@c.us`;
-        await client.sendMessage(formattedNumber, message);
+
+        let media = null;
+        if (attachment) {
+            media = new MessageMedia('application/pdf', attachment, 'arquivo.pdf');
+        }
+
+        if (media) {
+            await client.sendMessage(formattedNumber, media, { caption: message });
+        } else {
+            await client.sendMessage(formattedNumber, message);
+        }
+
         res.json({ success: true, message: 'Mensagem enviada!' });
     } catch (error) {
-        console.error('Erro ao enviar a mensagem:', error);  // Log completo do erro
+        console.error('Erro ao enviar a mensagem:', error);
         res.status(500).json({ success: false, error: error.message });
     }
+});
+
+
+
+
+app.get('/status', async (req, res) => {
+
+    res.json({ success: true, message: 'Mensagem enviada!' });
 });
 
 app.listen(3000, () => console.log('Servidor rodando na porta 3000'));
