@@ -2,88 +2,112 @@ import requests
 import time
 import os
 import shutil
+import base64
 from datetime import datetime
+import mimetypes
 
 # Caminhos das pastas
 PASTA_MONITORADA = r"C:\Users\Cliente\Desktop\wppEnvio\checar"
 PASTA_ENVIADOS = r"C:\Users\Cliente\Desktop\wppEnvio\checado"
-PASTA_LOGS = r"C:\Users\Cliente\Desktop\wppEnvio\logs"
 
-# Mensagens pré-configuradas para teste
-MENSAGENS = {
-    "1": "Olá {nome}, esta é uma mensagem de teste."
-}
-
-# Função para registrar logs
-def registrar_log(mensagem):
-    """Registra mensagens no arquivo de log diário"""
-    data_atual = datetime.now().strftime("%Y-%m-%d")
-    log_path = os.path.join(PASTA_LOGS, f"log_{data_atual}.txt")
-    
-    horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_mensagem = f"[{horario}] {mensagem}\n"
-
-    with open(log_path, "a", encoding="utf-8") as log_file:
-        log_file.write(log_mensagem)
-
-# Função para extrair dados do arquivo
-def extrair_dados(linha):
+# Função para extrair os dados do arquivo
+def extrair_dados(caminho_arquivo):
+    dados = {}
+    linhas_originais = []
     try:
-        nome = ''.join(filter(str.isalpha, linha))
-        numero = ''.join(filter(str.isdigit, linha.split('-')[0]))  # Número antes do traço
-        mensagem_id = linha.split('-')[1]  # ID da mensagem após o traço
-        return nome, numero, mensagem_id
+        with open(caminho_arquivo, "r", encoding="utf-8") as f:
+            linhas_originais = f.readlines()
+        
+        for linha in linhas_originais:
+            if "=" in linha:
+                chave, valor = linha.strip().split("=", 1)
+                dados[chave.strip().upper()] = valor.strip()
+        
+        return dados, linhas_originais
     except Exception as e:
-        registrar_log(f"Erro ao extrair dados da linha '{linha}': {e}")
-        return None, None, None
+        print(f"Erro ao extrair dados do arquivo {caminho_arquivo}: {e}")
+        return None, None
 
-# Função para enviar a mensagem via API do servidor Node.js
-def enviar_mensagem(numero, mensagem):
+# Função para converter arquivo para base64
+def converter_para_base64(caminho_anexo):
+    try:
+        with open(caminho_anexo, "rb") as file:
+            encoded = base64.b64encode(file.read()).decode("utf-8")
+        return encoded
+    except Exception as e:
+        print(f"❌ Erro ao converter anexo para base64: {e}")
+        return None
+
+# Função para detectar o tipo MIME do arquivo
+def detectar_mime_type(caminho_arquivo):
+    mime_type, _ = mimetypes.guess_type(caminho_arquivo)
+    return mime_type or "application/octet-stream"
+
+# Função para enviar mensagem via API
+def enviar_mensagem(numero, mensagem, caminho_anexo=None):
     url = "http://localhost:3000/send"
-    data = {"number": numero, "message": mensagem}
-    registrar_log(f"Enviando mensagem para {numero}... Mensagem: {mensagem}")
-
+    data = {"number": f"55{numero}", "message": mensagem}
+    
+    if caminho_anexo and os.path.exists(caminho_anexo):
+        arquivo_base64 = converter_para_base64(caminho_anexo)
+        if arquivo_base64:
+            data["attachment"] = {
+                "filename": os.path.basename(caminho_anexo),
+                "mimetype": detectar_mime_type(caminho_anexo),
+                "data": arquivo_base64
+            }
+        
     try:
         response = requests.post(url, json=data)
-        if response.status_code == 200:
-            registrar_log(f"Mensagem enviada com sucesso para {numero}")
-        else:
-            registrar_log(f"Erro ao enviar mensagem para {numero}: {response.text}")
         return response.json()
     except requests.exceptions.RequestException as e:
-        registrar_log(f"Falha na requisição ao enviar mensagem para {numero}: {e}")
+        print(f"❌ Erro ao enviar mensagem: {e}")
         return {"success": False, "error": str(e)}
+
+# Função para atualizar o arquivo após envio
+def atualizar_arquivo(caminho_arquivo, linhas_originais, status_envio, anexo_enviado, numero):
+    try:
+        data_envio = datetime.now().strftime("%d/%m/%Y")
+        hora_envio = datetime.now().strftime("%H:%M:%S")
+        novas_linhas = linhas_originais + ["\n"] * 5 + [
+            f"STATUS={status_envio}\n",
+            f"ANEXO={anexo_enviado}\n",
+            f"DATA={data_envio}\n",
+            f"HORA={hora_envio}\n",
+            f"NUMERO=55{numero}\n"
+        ]
+        
+        with open(caminho_arquivo, "w", encoding="utf-8") as f:
+            f.writelines(novas_linhas)
+        return True
+    except Exception as e:
+        print(f"⚠️ Erro ao atualizar arquivo {caminho_arquivo}: {e}")
+        return False
 
 # Loop para monitorar a pasta
 while True:
-    registrar_log("Verificando a pasta...")
-
     arquivos = [f for f in os.listdir(PASTA_MONITORADA) if f.endswith('.txt')]
-
-    if not arquivos:
-        registrar_log("Nenhum arquivo encontrado. Aguardando...")
-
     for arquivo in arquivos:
-        registrar_log(f"Processando arquivo: {arquivo}")
         caminho_completo = os.path.join(PASTA_MONITORADA, arquivo)
+        dados, linhas_originais = extrair_dados(caminho_completo)
+        if not dados:
+            continue
 
-        try:
-            with open(caminho_completo, "r", encoding="utf-8") as f:
-                linhas = f.readlines()
+        numero = dados.get("TELEFONE")
+        mensagem = dados.get("MENSAGEM", "Mensagem padrão")
+        anexo = dados.get("ANEXOS", "").strip()
 
-            for linha in linhas:
-                nome, numero, mensagem_id = extrair_dados(linha.strip())
-                if numero and mensagem_id:
-                    registrar_log(f"Nome: {nome}, Número: {numero}, ID da mensagem: {mensagem_id}")
-                    mensagem = MENSAGENS.get(mensagem_id, "Mensagem padrão").format(nome=nome)
-                    resposta = enviar_mensagem(numero, mensagem)
-                    registrar_log(f"Resultado do envio para {numero}: {resposta}")
+        caminho_anexo = os.path.join(PASTA_MONITORADA, anexo) if anexo else None
+        if caminho_anexo and not os.path.exists(caminho_anexo):
+            caminho_anexo = None
+        
+        resposta = enviar_mensagem(numero, mensagem, caminho_anexo)
+        status_envio = "ENVIADO" if resposta.get("success") else "FALHA"
+        anexo_enviado = "ENVIADO" if caminho_anexo and resposta.get("success") else "FALHA"
 
+        if atualizar_arquivo(caminho_completo, linhas_originais, status_envio, anexo_enviado, numero):
             shutil.move(caminho_completo, os.path.join(PASTA_ENVIADOS, arquivo))
-            registrar_log(f"Arquivo {arquivo} movido para a pasta de enviados.")
-
-        except Exception as e:
-            registrar_log(f"Erro ao processar arquivo {arquivo}: {e}")
-
-    registrar_log("Verificação concluída. Aguardando próximo ciclo...")
+            if caminho_anexo and resposta.get("success"):
+                shutil.move(caminho_anexo, os.path.join(PASTA_ENVIADOS, os.path.basename(caminho_anexo)))
+    
     time.sleep(60)
