@@ -1,4 +1,4 @@
-const { Client, LocalAuth , MessageMedia} = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 
@@ -16,33 +16,9 @@ client.on('qr', qr => {
 
 client.on('ready', () => {
     console.log('Cliente WhatsApp pronto!');
-    // Aqui você pode enviar uma mensagem de teste se desejar
-    // const number = '5511999999999';
-    // const message = 'Mensagem de teste!';
-    // client.sendMessage(`${number}@c.us`, message)
-    //     .then(response => console.log('Mensagem de teste enviada:', response))
-    //     .catch(error => console.log('Erro no envio de mensagem de teste:', error));
 });
 
 client.initialize();
-
-// app.post('/send', async (req, res) => {
-//     const { number, message, attachment } = req.body;
-//     console.log('Número recebido:', number);  // Verifique os dados recebidos
-//     console.log('Mensagem recebida:', message);  // Verifique os dados recebidos
-//      console.log('Arquivo recebida:', attachment);  // Verifique os dados recebidos
-//     try {
-//         const formattedNumber = number.includes('@c.us') ? number : `${number}@c.us`;
-//         await client.sendMessage(formattedNumber, message, attachment);
-//         res.json({ success: true, message: 'Mensagem enviada!' });
-//     } catch (error) {
-//         console.error('Erro ao enviar a mensagem:', error);  // Log completo do erro
-//         res.status(500).json({ success: false, error: error.message });
-//     }
-// });
-
-
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 
 app.post('/send', async (req, res) => {
     try {
@@ -50,13 +26,13 @@ app.post('/send', async (req, res) => {
 
         console.log('Número recebido:', number);
         console.log('Mensagem recebida:', message);
-        console.log('Arquivo recebido (Base64):', attachment ? 'Sim' : 'Não');
+        console.log('Arquivo recebido:', attachment ? attachment.filename : 'Nenhum');
 
         const formattedNumber = number.includes('@c.us') ? number : `${number}@c.us`;
 
         let media = null;
-        if (attachment) {
-            media = new MessageMedia('application/pdf', attachment, 'arquivo.pdf');
+        if (attachment && attachment.data) {
+            media = new MessageMedia(attachment.mimetype, attachment.data, attachment.filename);
         }
 
         if (media) {
@@ -72,12 +48,9 @@ app.post('/send', async (req, res) => {
     }
 });
 
-
-
-
 app.get('/status', async (req, res) => {
-
-    res.json({ success: true, message: 'Mensagem enviada!' });
+    res.json({ success: true, message: 'Servidor rodando e pronto para envio!' });
 });
 
 app.listen(3000, () => console.log('Servidor rodando na porta 3000'));
+
