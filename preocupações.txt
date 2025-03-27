@@ -1,0 +1,11 @@
+como podemos resolver o problema de  api travada?
+
+O problema de mensagens atrasadas não aconteceria pois não teriam horarios exatos, mas nesse codigo que te mandei ele sempre que chega a 30 segundos ele reseta o tempo para 5 segundos novamente ne?
+
+como podemos fazer uma verificação para que o codigo não quebre ao ter txt corrompidos ou mal formatados?
+
+quanto a anexos inexistentes, queria que a fazer uma verificaçao que caso o arquivo do anexo estiver no txt porem não exista na pasta para envio, deve ser enviada uma mensagem para o administrador avisando do problema e a mensagem deve ser movida para a pasta verificar que vai estar previamente criada, 
+
+mas por enquanto não faça nada apenas absorva
+
+como podemos resolver a questão de o software estar consumindo muita cpu?
