@@ -1,0 +1,143 @@
+import requests
+import time
+import os
+import shutil
+import base64
+from datetime import datetime
+import mimetypes
+
+# Caminhos das pastas
+PASTA_MONITORADA = r"C:\Users\Cliente\Desktop\wppEnvio\checar"
+PASTA_ENVIADOS = r"C:\Users\Cliente\Desktop\wppEnvio\checado"
+PASTA_LOGS = r"C:\Users\Cliente\Desktop\wppEnvio\logs"
+
+# Garante que a pasta de logs exista
+os.makedirs(PASTA_LOGS, exist_ok=True)
+
+# Número do administrador
+ADMINISTRADOR = "14988350341"
+# Controle de envio diário
+ultima_data_envio_admin = ""
+
+# Tempo inicial de espera
+tempo_envio = 5
+
+def verificar_conexao():
+    try:
+        requests.get("http://www.google.com", timeout=5)
+        return True
+    except requests.ConnectionError:
+        return False
+
+def extrair_dados(caminho_arquivo):
+    try:
+        with open(caminho_arquivo, "r", encoding="utf-8") as f:
+            linhas = f.readlines()
+        
+        dados = {}
+        if len(linhas) < 3:
+            return None
+        
+        dados["USUARIO"] = linhas[0].split("=")[1].strip()
+        dados["DATA"] = linhas[1].split("=")[1].strip()
+        dados["HORA"] = linhas[2].split("=")[1].strip()
+        dados["TELEFONE"] = linhas[3].strip()
+        dados["ANEXO"] = linhas[4].strip() if len(linhas) > 4 else ""
+        dados["MENSAGEM"] = "\n".join(linhas[5:]).strip() if len(linhas) > 5 else ""
+        
+        return dados
+    except Exception as e:
+        print(f"Erro ao extrair dados do arquivo {caminho_arquivo}: {e}")
+        return None
+
+def converter_para_base64(caminho_anexo):
+    try:
+        with open(caminho_anexo, "rb") as file:
+            return base64.b64encode(file.read()).decode("utf-8")
+    except Exception as e:
+        print(f"Erro ao converter anexo para base64: {e}")
+        return None
+
+def detectar_mime_type(caminho_arquivo):
+    mime_type, _ = mimetypes.guess_type(caminho_arquivo)
+    return mime_type or "application/octet-stream"
+
+def enviar_mensagem(numero, mensagem, caminho_anexo=None):
+
+    while not verificar_conexao():
+        print("Sem conexão com a internet. Aguardando reconexão...")
+        time.sleep(5)
+        
+    global tempo_envio  # Permite modificar a variável global dentro da função
+    url = "http://localhost:3000/send"
+    data = {"number": f"55{numero}", "message": mensagem}
+    
+    if caminho_anexo and os.path.exists(caminho_anexo):
+        arquivo_base64 = converter_para_base64(caminho_anexo)
+        if arquivo_base64:
+            data["attachment"] = {
+                "filename": os.path.basename(caminho_anexo),
+                "mimetype": detectar_mime_type(caminho_anexo),
+                "data": arquivo_base64
+            }
+    
+    try:
+        print(f"Aguardando {tempo_envio} segundos antes do envio...")
+        time.sleep(tempo_envio)  # Tempo de espera progressivo
+        response = requests.post(url, json=data)
+        resposta = response.json()
+        
+        if resposta.get("success"):
+            print(f"Mensagem para {numero} enviada com sucesso!")
+            tempo_envio += 1  # Aumenta progressivamente o tempo entre envios
+            if tempo_envio > 30:  # Limita o tempo máximo de espera
+                tempo_envio = 5
+        else:
+            print(f"Erro ao enviar mensagem para {numero}: {resposta.get('error')}")
+        
+        return resposta
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao enviar mensagem: {e}")
+        return {"success": False, "error": str(e)}
+
+def verificar_envio_admin():
+    global ultima_data_envio_admin
+    agora = datetime.now()
+    data_atual = agora.strftime("%Y-%m-%d")
+    hora_atual = agora.strftime("%H:%M")
+    
+    if hora_atual == "12:30" and ultima_data_envio_admin != data_atual:
+        enviar_mensagem(ADMINISTRADOR, "✅ O sistema está online e funcionando normalmente.")
+        ultima_data_envio_admin = data_atual
+
+while True:
+
+    verificar_envio_admin()
+    arquivos = [f for f in os.listdir(PASTA_MONITORADA) if f.endswith('.txt')]
+    
+    if not arquivos:
+        tempo_envio = 5  # Reseta tempo se não houver arquivos
+        time.sleep(5)  # Pequeno tempo de espera antes de checar novamente
+        continue
+
+    for arquivo in arquivos:
+        caminho_completo = os.path.join(PASTA_MONITORADA, arquivo)
+        dados = extrair_dados(caminho_completo)
+        if not dados:
+            continue
+        
+        numero = dados.get("TELEFONE")
+        mensagem = dados.get("MENSAGEM", "Mensagem padrão")
+        anexo = dados.get("ANEXO", "").strip()
+        caminho_anexo = os.path.join(PASTA_MONITORADA, anexo) if anexo else None
+        if caminho_anexo and not os.path.exists(caminho_anexo):
+            caminho_anexo = None
+        
+        print(f"Enviando mensagem para {numero}...")
+        resposta = enviar_mensagem(numero, mensagem, caminho_anexo)
+        
+        if resposta.get("success"):
+            shutil.move(caminho_completo, os.path.join(PASTA_ENVIADOS, arquivo))
+            if caminho_anexo:
+                shutil.move(caminho_anexo, os.path.join(PASTA_ENVIADOS, os.path.basename(caminho_anexo)))
+
