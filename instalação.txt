@@ -1,0 +1,259 @@
+----------------------------------------------------------------------INSTALAÇÃO DO PROGRAMA PASSO A PASSO-----------------------------------------------------------------------
+
+----------------------- TER A ESTRUTURA DE DIRETORIO CRIADA
+
+NO CASO:
+
+C:\Users\Cliente\Desktop\wppEnvio
+├── .wwebjs_auth          # Pasta de autenticação do WhatsApp
+├── .wwebjs_cache         # Cache de dados do WhatsApp Web
+├── checado               # Pasta para arquivos processados
+├── checar                # Pasta para arquivos a serem processados
+├── envio.py              # Código principal em Python
+├── logs                  # Diretório para logs
+├── server.js             # Código de servidor Node.js
+├── venv                  # Ambiente virtual
+
+----------------------- SE O AMBIENTE VIRTUAL NÃO ESTIVER CONFIGURADO
+
+
+IR ATÉ O DIRETORIO DO PROGRAMA
+
+NO CASO: 
+cd C:\Users\Cliente\Desktop\wppEnvio
+
+CRIAR O AMBIENTE VIRTUAL
+python -m venv venv
+
+ATIVAR O AMBIENTE VIRTUAL
+.\venv\Scripts\activate
+
+
+----------------------- COM O AMBIENTE VIRTUAL ATIVO
+
+CRIA O ARQUIVO .BAT DO SERVER.JS
+
+@echo off
+cd /d C:\Users\Cliente\Desktop\wppEnvio
+call wppEnvio\Scripts\activate
+node server.js
+pause
+
+
+CRIA O ARQUIVO .BAT DO ENVIO.PY
+
+@echo off
+cd /d C:\Users\Cliente\Desktop\wppEnvio
+call wppEnvio\Scripts\activate
+python envio.py
+pause
+
+EXPLICAÇÃO
+
+'''
+O comando cd /d muda para a pasta do projeto.
+call wppEnvio\Scripts\activate ativa o ambiente virtual.
+python envio.py executa o script.
+pause mantém a janela aberta para verificar erros, remova depois de testar.
+'''
+
+----------------------- APOS ISSO SÓ AGENDAR A TARFA NO WINDOWS
+
+SE FOR .BAT
+
+CRIAR TAREFA BASICA
+NOME DA TAREFA
+GATILHO
+AÇÃO -  NO CASO EXECUTAR O ARQUIVO .BAT LOCALIZANDO ELE NA PASTA DELE
+OK
+
+SE FOR MANUAL
+
+CRIAR TAREFA BASICA
+NOME DA TAREFA
+GATILHO
+AÇÃO - PROGRAMA/SCRIPT: O CAMINHO DO EXE NO AMBIENTE VIRTUAL --- ARGUMENTOS: CAMINHO DO ARQUIVO QUE VOCE QUER EXECUTAR --- INICIAR: CAMINHO DA PASTA PRINCIPAL DO DIRETORIO
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+### **INSTALAÇÃO DO PROGRAMA PASSO A PASSO**
+
+#### **1. CRIAR ESTRUTURA DE DIRETÓRIO**
+
+Crie a seguinte estrutura de diretório no seu PC:
+
+```plaintext
+C:\Users\Cliente\Desktop\wppEnvio
+├── .wwebjs_auth          # Pasta de autenticação do WhatsApp
+├── .wwebjs_cache         # Cache de dados do WhatsApp Web
+├── checado               # Pasta para arquivos processados
+├── checar                # Pasta para arquivos a serem processados
+├── envio.py              # Código principal em Python
+├── logs                  # Diretório para logs
+├── server.js             # Código de servidor Node.js
+├── venv                  # Ambiente virtual
+```
+
+#### **2. INSTALAR O PYTHON**
+
+Se o Python não estiver instalado, siga os passos para instalá-lo:
+
+1. **Baixar o Python:** Vá até [python.org](https://www.python.org/downloads/) e baixe a versão mais recente do Python.
+2. **Instalar o Python:**
+   - Durante a instalação, marque a opção **"Add Python to PATH"** para garantir que o Python esteja acessível via linha de comando.
+   - Complete a instalação.
+
+3. **Verificar se o Python foi instalado corretamente:**
+   Abra o **Prompt de Comando** e digite:
+   ```bash
+   python --version
+   ```
+   Isso deve retornar a versão do Python instalada, por exemplo: `Python 3.9.x`.
+
+#### **3. INSTALAR O NODE.JS**
+
+Se o Node.js não estiver instalado, siga os passos abaixo:
+
+1. **Baixar o Node.js:** Vá até [nodejs.org](https://nodejs.org/) e baixe a versão recomendada para a maioria dos usuários.
+2. **Instalar o Node.js:** Execute o instalador e siga as instruções. Durante a instalação, o Node.js será adicionado automaticamente ao PATH.
+
+3. **Verificar se o Node.js foi instalado corretamente:**
+   Abra o **Prompt de Comando** e digite:
+   ```bash
+   node --version
+   ```
+   Isso deve retornar a versão do Node.js instalada, por exemplo: `v16.x.x`.
+
+#### **4. CRIAR E ATIVAR O AMBIENTE VIRTUAL PYTHON**
+
+1. **Acesse o diretório do seu projeto:**
+   Abra o **Prompt de Comando** e navegue até o diretório do seu projeto:
+   ```bash
+   cd C:\Users\Cliente\Desktop\wppEnvio
+   ```
+
+2. **Criar o ambiente virtual:**
+   Execute o seguinte comando para criar um ambiente virtual:
+   ```bash
+   python -m venv venv
+   ```
+
+3. **Ativar o ambiente virtual:**
+   Para ativar o ambiente virtual, execute o seguinte comando no **Prompt de Comando**:
+   ```bash
+   .\venv\Scripts\activate
+   ```
+
+4. **Verificar se o ambiente foi ativado corretamente:**
+   Após a ativação, o prompt de comando deverá mudar para indicar que o ambiente virtual está ativo, por exemplo:
+   ```bash
+   (venv) C:\Users\Cliente\Desktop\wppEnvio>
+   ```
+
+#### **5. INSTALAR DEPENDÊNCIAS DO PYTHON**
+
+1. **Criar o arquivo `requirements.txt`:**
+   Crie um arquivo `requirements.txt` com as dependências necessárias para o seu script Python. Exemplo:
+   ```txt
+   selenium==4.3.0
+   requests==2.26.0
+   schedule==1.1.0
+   ```
+
+2. **Instalar as dependências Python:**
+   Com o ambiente virtual ativado, instale as dependências usando o comando:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+#### **6. INSTALAR AS DEPENDÊNCIAS DO NODE.JS**
+
+1. **Criar o arquivo `package.json`:**
+   Se você ainda não tem o arquivo `package.json`, crie um usando o comando:
+   ```bash
+   npm init -y
+   ```
+
+2. **Instalar as dependências do Node.js:**
+   Instale as dependências necessárias para o `server.js` com o seguinte comando:
+   ```bash
+   npm install whatsapp-web.js qrcode-terminal express
+   ```
+
+#### **7. CRIAR ARQUIVOS `.BAT` PARA EXECUÇÃO**
+
+1. **Criar arquivo `.bat` para o `server.js`:**
+   No diretório do projeto, crie um arquivo chamado `start_server.bat` com o seguinte conteúdo:
+
+   ```batch
+   @echo off
+   cd /d C:\Users\Cliente\Desktop\wppEnvio
+   call venv\Scripts\activate
+   node server.js
+   pause
+   ```
+
+2. **Criar arquivo `.bat` para o `envio.py`:**
+   No mesmo diretório, crie um arquivo chamado `start_envio.bat` com o seguinte conteúdo:
+
+   ```batch
+   @echo off
+   cd /d C:\Users\Cliente\Desktop\wppEnvio
+   call venv\Scripts\activate
+   python envio.py
+   pause
+   ```
+
+   **Explicação:**
+   - O comando `cd /d` muda para o diretório do projeto.
+   - O comando `call venv\Scripts\activate` ativa o ambiente virtual Python.
+   - O comando `node server.js` executa o script do Node.js.
+   - O comando `python envio.py` executa o script Python.
+   - O comando `pause` mantém a janela aberta após a execução para que você possa ver os erros ou mensagens de saída.
+
+#### **8. AGENDAR AS TAREFAS NO WINDOWS**
+
+1. **Agendar tarefa básica para o `.bat` (se necessário):**
+
+   - Abra o **Agendador de Tarefas** no Windows.
+   - Clique em **Criar Tarefa** e defina um nome para a tarefa.
+   - **Gatilho:** Configure o horário ou evento desejado.
+   - **Ação:** Selecione "Iniciar um programa" e aponte para o arquivo `.bat` criado anteriormente (por exemplo, `start_server.bat` ou `start_envio.bat`).
+   - **Concluir:** Clique em OK.
+
+2. **Agendar tarefa manual (se necessário):**
+   - Se você preferir executar manualmente, utilize a opção "Programa/Scripts" para configurar a tarefa. Defina o caminho para o executável do Python ou do Node.js e adicione os argumentos conforme o necessário:
+     - **Para `envio.py`:** Caminho do Python e argumento para o arquivo:
+       ```text
+       C:\path\to\python.exe
+       C:\Users\Cliente\Desktop\wppEnvio\envio.py
+       ```
+     - **Para `server.js`:** Caminho do Node.js e argumento para o arquivo:
+       ```text
+       C:\path\to\node.exe
+       C:\Users\Cliente\Desktop\wppEnvio\server.js
+       ```
+
+#### **9. TESTAR A INSTALAÇÃO**
+
+1. **Testar os arquivos `.bat` manualmente:**
+   - Antes de agendar a tarefa, **execute os arquivos `.bat` manualmente** para verificar se tudo está funcionando corretamente. O arquivo `.bat` deve ativar o ambiente virtual, executar o script e manter a janela aberta para possíveis erros.
+
+2. **Verificar a execução no Agendador de Tarefas:**
+   - Após agendar as tarefas, verifique se elas estão sendo executadas no horário correto. Você pode consultar os logs para verificar se há algum erro ou problema.
+
+---
+
+### **Resumo do Processo**
+
+1. **Instalar Python e Node.js.**
+2. **Criar ambiente virtual Python e instalar dependências.**
+3. **Instalar dependências do Node.js.**
+4. **Criar os arquivos `.bat` para executar os scripts.**
+5. **Agendar a execução automática usando o Agendador de Tarefas.**
+6. **Testar a execução manual antes de agendar.**
+
+Com isso, a instalação do programa deve ser bem-sucedida! Certifique-se de testar cada etapa para garantir que tudo esteja funcionando corretamente.
+
+
